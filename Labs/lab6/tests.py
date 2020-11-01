@@ -727,7 +727,7 @@ make_test(type = 'VALUE',
           expected_val = "correct answer as an int (1, 2, 3, or 4)",
           name = BOUNDARY_ANS_9_getargs)
 
-#BOUNDARY_ANS_10: The data isn't even separated -- the outer region contains
+#BOUNDARY_ANS_10: The data isn't even separa    ted -- the outer region contains
 # both A and B points!
 BOUNDARY_ANS_10_getargs = 'BOUNDARY_ANS_10'  #TEST 55
 def BOUNDARY_ANS_10_testanswer(val, original_val = None):
