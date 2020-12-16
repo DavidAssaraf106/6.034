@@ -3,7 +3,7 @@
 
 from nets import *
 from bayes_api import *
-import numpy as np
+# import numpy as np
 
 #### Part 1: Warm-up; Ancestors, Descendents, and Non-descendents ##############
 
@@ -99,7 +99,7 @@ def probability_marginal(net, hypothesis):
     "Computes a marginal probability as a sum of joint probabilities"
     joints = net.combinations(net.get_variables(), hypothesis)
     joint_probabilities = [probability_joint(net, joint) for joint in joints]
-    return np.sum(joint_probabilities)
+    return sum(joint_probabilities)
 
 
 def probability_conditional(net, hypothesis, givens=None):
@@ -170,38 +170,37 @@ def is_structurally_independent(net, var1, var2, givens=None):
     Uses structural independence only (not numerical independence).
     """
     # construct the ancestor graph
-    ancestor_variables = set()
-    # how to deal with givens = None ?
+    ancestors = get_ancestors(net, var1).union(get_ancestors(net, var2))
     if givens is not None:
-        for var in [var1, var2, *givens.keys()]:
-            ancestor_variables.update(get_ancestors(net, var))
-        ancestor_variables.update({var1, var2, *givens.keys()})
-    if givens is None:
-        for var in [var1, var2]:
-            ancestor_variables.update(get_ancestors(net, var))
-        ancestor_variables.update({var1, var2})
-    ancestor_net = net.subnet(list(ancestor_variables))
-    # link parents of a same child in the ancestor graph
-    variables = ancestor_net.get_variables()
-    for var in variables:
-        parents = ancestor_net.get_parents(var)
-        for i, parent1 in enumerate(list(parents)):
-            for parent2 in list(parents)[i+1:]:
-                if parent1 != parent2:
-                    ancestor_net.link(parent1, parent2)
-    # disorient the graph
-    ancestor_net = ancestor_net.make_bidirectional()
-    # delete the givens and their edges
+        for g in givens:
+            ancestors = get_ancestors(net, g).union(ancestors)
+        givens_list = list(givens.keys())
+    else:
+        givens_list = []
+
+    anc = list(ancestors)
+    new_net = net.subnet(ancestors.union(set([var1, var2] + givens_list)))
+
+    for a in ancestors:
+        children_a = new_net.get_children(a)
+        anc.remove(a)
+        for b in anc:
+            children_b = new_net.get_children(b)
+            if len(children_a.intersection(children_b)) != 0:
+                new_net.link(a, b)
+
+    new_net = new_net.make_bidirectional()
+
     if givens is not None:
-        for given in givens:
-            if given in ancestor_net.get_variables():
-                ancestor_net.remove_variable(given)
-    # check for connection inside the remaining graph
-    return ancestor_net.find_path(var1, var2) is None
+        for g in givens:
+            new_net.remove_variable(g)
 
+    path = new_net.find_path(var1, var2)
 
+    if path is None:
+        return True
 
-
+    return False
 
 
 #### SURVEY ####################################################################
